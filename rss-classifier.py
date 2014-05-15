@@ -9,6 +9,12 @@ import re
 import ascii_with_complaints
 import sys
 import ConfigParser
+from nltk.collocations import BigramCollocationFinder
+from nltk.metrics import BigramAssocMeasures
+from nltk.classify import NaiveBayesClassifier
+from nltk.tokenize import WordPunctTokenizer
+from nltk.stem import PorterStemmer
+from nltk import  clean_html
 
 ##open configuration file
 config = ConfigParser.RawConfigParser()
