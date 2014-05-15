@@ -17,11 +17,15 @@ from nltk import  clean_html
 config = ConfigParser.RawConfigParser()
 config.read('rss-classifier.cfg')
 
+
 ##debug mode
 debug=config.getboolean('debug', 'debug_enabled')
 def debug_mode(text):
 	if debug==True:
 		 print text
+##handle errors
+error_counter=0
+error_list= []
 
 articles=[]
 
@@ -31,7 +35,7 @@ def fuck_unicode(text):  ###try to clean up the encoding mess 1
 
 
 class RSSitem(object):
-	def __init__(self,id_given,title_given,content_given,label_given):
+	def __init__(self, id_given= " ", title_given = " ", content_given = " ", label_given = " "):
 		self.Id=int(id_given)
 		self.Title=title_given
 		self.Content=self.clean_content(content_given)
@@ -52,13 +56,13 @@ class RSSitem(object):
 
 		if True==config.getboolean('filter', 'bigram_enabled'):
 			bigram_finder = BigramCollocationFinder.from_words(clean)				#not sure if needed
-			bigrams = bigram_finder.nbest(BigramAssocMeasures.chi_sq, 500)			#same
+			bigrams = bigram_finder.nbest(BigramAssocMeasures.chi_sq, 500)			#
 			for bigram_tuple in bigrams:											#
 				x = "%s %s" % bigram_tuple											#
 				clean.append(x)														#
 
 		tokens =  [stemmer.stem(x.lower()) for x in clean if x not in cachedStopWords and len(x) > 1]
-		#clean = ' '.join([word for word in clean.split() if word not in cachedStopWords])
+		#clean = ' '.join([word for word in clean.split() if word not in cachedStopWords]) 		#not needed
 		debug_mode("cleaning RSS item finished")
 		return tokens
 
@@ -72,7 +76,7 @@ class mysql_manager(object):
 		self.var_db_prefix='ttrss_'
 		self.queries = {
 			"query_starred" : ("SELECT ref_id FROM  "+self.var_db_prefix+"user_entries WHERE (marked = 1) OR (published = 1)"),
-			"query_read" : ("SELECT ref_id FROM " +self.var_db_prefix+"user_entries WHERE (marked = 0) AND (published = 0) AND (unread = 0)"),
+			"query_read" : ("SELECT ref_id FROM " +self.var_db_prefix+"user_entries WHERE (marked = 0) AND (published = 0) AND (unread = 0) "),
 			"query_unread" : ("SELECT ref_id FROM "+self.var_db_prefix+"user_entries WHERE (score = '0')")
 		}
 
@@ -80,8 +84,7 @@ class mysql_manager(object):
 		self.connect_database()
 
 		#self.get_content(self.query_starred)
-	def get_settings():
-		config=open("config.txt")
+
 
 	def connect_database(self):
 		debug_mode( "connecting to database" )
@@ -99,29 +102,35 @@ class mysql_manager(object):
 
 
 		self.list_ids=self.db_cursor.execute(self.label) #get number of user entries
-		#for entry_id in range(1,self.list_ids):
-		for entry_id in self.list_ids:
+		print self.list_ids
+		for entry_id in range(1,self.list_ids):
 			self.db_cursor.fetchall()
-			self.query_entry= ("SELECT title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")")
+			self.query_entry= ("SELECT id, title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")")
 			self.db_cursor.execute(self.query_entry)
 			self.content_tmp=self.db_cursor.fetchall()
-			#if ( self.content_tmp[0][0] and self.content_tmp[0][1] and self.content_tmp[0][2] ) != ' ' or None:
-			articles.append(RSSitem( entry_id, self.content_tmp[0][0],self.content_tmp[0][1],self.label))
+			try:
+				articles.append(RSSitem( entry_id, self.content_tmp[0][0],self.content_tmp[0][1],self.label))
+			except:
+				debug_mode ("Error at line" + str(entry_id) )
+				error_list.append("Error at line" + str(entry_id) )
 
 class train(object):
 	def __init__(self):
 		self.train_set=[]
 		self.count=0
+		content=None
+		label=None
 
 		if debug==True: print "Start creating training data"
-		#for article in range(0,len(articles)):
+		#for article in range(0,len(articles)):						##not working approach 1
 		#	self.trainingdata.append(articles[article].Content)
 		#	self.count+=1
 		for article in articles:
-			features = article.Content
+			content = article.Content
 			label = article.Label
 			print label, features
-		self.train_set = self.train_set + [features,label]
+			self.train_set = self.train_set + [content,label]		 ##not working approach 2
+
 		debug_mode(("Finished creating training data:", self.train_set ))
 
 		debug_mode("Start classification")
@@ -135,16 +144,14 @@ def save_all_articles():
 def open_all_articles():
 	articles_file=open("articles.txt",'r')
 	articles=pickle.load(articles_file)
-	if debug==True:
-		debug_mode("articles re-read")
-		debug_mode(articles)
+	debug_mode("articles re-read")
+	debug_mode(articles)
 
 def test():
 	#open_all_articles()
 	testtext2=("While Netflix and others work on new ways to stream movies to your browser through HTML5 that don't use Flash or Silverlight plugins Hollywoods requirements for DRM to prevent copying have put Mozilla in a bind The DRM proposed means user's don't know exactly what's going on their machines or if it's violating their privacy but without it Firefox will eventually be locked out of streaming most movies and TV shows. As a result Mozilla announced plans to roll it out in the next few months on Windows Mac and Linux versions of the browser so one upside could be official Netflix support on Linux.")
 	testtext=('Wie viel beispielsweise von den drei Millionen Dollar, die Osama bin Laden 2002 angeblich für gleichgesinnte Organisationen in Afrika verteilen ließ, bei Boko Haram angekommen sind, ist fraglich. Ebenso, wie viel aus welcher Verbindung heute noch in ihre Taschen fließt und wie viele Anhänger etwa in Somalia, in Libyen noch unter Gaddafi, in Afghanistan oder anderen Ländern trainiert wurden. Ein Motiv für andere Gruppen, den nigerianischen Terror zu unterstützen: Sie haben ein Interesse daran, sich sichere Rückzugs- oder Fluchtorte zu schaffen. Darüber hinaus soll Boko Haram Geld von der in London sitzenden Hilfsorganisation Al-Muntada Trust Fund oder der saudi-arabischen Islamic World Society erhalten haben.')
-	#testtext2=fuck_unicode(testtext2)
-	for i in range(0,20):
+	for i in range(0,146):
 		articles.append(RSSitem(127, "titel test", testtext2,"query_starred") )
 		articles.append(RSSitem(127, "Ein anderer Titel", testtext,"query_read") )
 		print "article " + str(i+1) +" added"
@@ -152,11 +159,15 @@ def test():
 def create_corpus():
 	data_fetcher=mysql_manager()
 	data_fetcher.get_content("query_starred")
+	data_fetcher.get_content("query_read")
 	data_fetcher.get_content("query_unread")
 	save_all_articles()
 
 
+
 #test()
+#open_all_articles()
 #trainer=train()
+
 create_corpus()
 
