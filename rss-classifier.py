@@ -101,11 +101,11 @@ class mysql_manager(object):
 		self.list_ids=self.db_cursor.execute(self.label) #get number of user entries
 		for entry_id in range(1,self.list_ids):
 			self.db_cursor.fetchall()
-			self.query_entry= ("SELECT id,title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")")
+			self.query_entry= ("SELECT title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")")
 			self.db_cursor.execute(self.query_entry)
 			self.content_tmp=self.db_cursor.fetchall()
 			#if ( self.content_tmp[0][0] and self.content_tmp[0][1] and self.content_tmp[0][2] ) != ' ' or None:
-			articles.append(RSSitem( self.content_tmp[0][0],self.content_tmp[0][1],self.content_tmp[0][2],self.label))
+			articles.append(RSSitem( entry_id, self.content_tmp[0][0],self.content_tmp[0][1],self.label))
 
 class train(object):
 	def __init__(self):
