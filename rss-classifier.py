@@ -42,7 +42,7 @@ class RSSitem(object):
 
 
 	def clean_content(self, to_clean):
-		debug_mode( "cleaning RSS item")
+		debug_mode( "cleaning RSS item" + str(self.Id) )
 		tokenizer = WordPunctTokenizer()
 		stemmer = PorterStemmer()
 
@@ -104,8 +104,8 @@ class mysql_manager(object):
 			self.query_entry= ("SELECT id,title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")")
 			self.db_cursor.execute(self.query_entry)
 			self.content_tmp=self.db_cursor.fetchall()
-			if ( self.content_tmp[0][0] and self.content_tmp[0][1] and self.content_tmp[0][2] ) != ' ' or None:
-				articles.append(RSSitem( self.content_tmp[0][0],self.content_tmp[0][1],self.content_tmp[0][2],self.label))
+			#if ( self.content_tmp[0][0] and self.content_tmp[0][1] and self.content_tmp[0][2] ) != ' ' or None:
+			articles.append(RSSitem( self.content_tmp[0][0],self.content_tmp[0][1],self.content_tmp[0][2],self.label))
 
 class train(object):
 	def __init__(self):
