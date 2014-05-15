@@ -99,7 +99,8 @@ class mysql_manager(object):
 
 
 		self.list_ids=self.db_cursor.execute(self.label) #get number of user entries
-		for entry_id in range(1,self.list_ids):
+		#for entry_id in range(1,self.list_ids):
+		for entry_id in self.list_ids:
 			self.db_cursor.fetchall()
 			self.query_entry= ("SELECT title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")")
 			self.db_cursor.execute(self.query_entry)
