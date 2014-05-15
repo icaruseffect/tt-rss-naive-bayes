@@ -152,9 +152,10 @@ def create_corpus():
 	data_fetcher=mysql_manager()
 	data_fetcher.get_content("query_starred")
 	data_fetcher.get_content("query_unread")
+	save_all_articles()
 
 
-test()
-trainer=train()
-
+#test()
+#trainer=train()
+create_corpus()
 
