@@ -3,7 +3,7 @@
 import MySQLdb
 from helpers import *
 
-class Mysql_Manager(object):
+class Database_Manager(object):
 	'management class for the database. It processes requests from the article manager and  establishes a connection to the database, based data from the  configuration file.'
 
 	def start(self):
@@ -46,7 +46,7 @@ class Mysql_Manager(object):
 		return number_ids
 
 	def read_content(self, query_incoming, entry_id):
-		'returns a dictionary of values from the database'
+		'returns a dictionary of values from the database for the requested id and incoming query'
 
 		query_request = self.queries[query_incoming]
 		self.read_number_ids(query_incoming)
@@ -58,8 +58,6 @@ class Mysql_Manager(object):
 		self.content_tmp=self.db_cursor.fetchall()
 
 		try:
-		#	write to a dictionary being passed through
-		#	articles.append(RSSitem( [entry_id, self.content_tmp[0][0],self.content_tmp[0][1],self.label] ) )
 			labels= {
 			'id' :int(self.content_tmp[0][0]),
 			'title': unicode(self.content_tmp[0][1]),
@@ -78,8 +76,8 @@ class Mysql_Manager(object):
 
 		return
 
-debug_mode("Test")
-database=Mysql_Manager()
-database.start()
-print "number of id's in requested database: " + str( database.read_number_ids("starred") )
-print database.read_content("read", 3)
+#### usage reference:
+#database=Mysql_Manager()
+#database.start()
+#print "number of id's in requested database: " + str( database.read_number_ids("starred") )
+#print database.read_content("read", 3)
