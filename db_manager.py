@@ -3,20 +3,23 @@
 import MySQLdb
 from helpers import *
 
-class Mysql_Manager(object):
+class Database_Manager(object):
 	'management class for the database. It processes requests from the article manager and  establishes a connection to the database, based data from the  configuration file.'
 
 	def start(self):
-		debug_mode( "mysql_manager started" )
+		debug_mode( "mysql_manager started" ,1 )
 		self.var_db_prefix=config.get('server','database_prefix')
 
 		self.connected=False
 		self.connect_database()
 
+	def stop(self):
+		self.ttrss_db.close()
+
 
 	def connect_database(self):
 		'connects to the mysql database'
-		debug_mode( "connecting to database" )
+		debug_mode( "connecting to database" ,2 )
 
 		try:
 			self.ttrss_db = MySQLdb.connect(host=config.get('server', 'host'),
@@ -24,7 +27,7 @@ class Mysql_Manager(object):
 			                      passwd=config.get('server','password'),
 			                      db=config.get('server','database')
 			                      )
-			debug_mode( "connection established" )
+			debug_mode( "connection established" ,2)
 			self.db_cursor = self.ttrss_db.cursor()
 
 			self.queries = {
@@ -40,26 +43,25 @@ class Mysql_Manager(object):
 		return self.connected
 
 	def read_number_ids(self,query_request):
-		#Database queries dictionary
+		'returns the number of entries in given database'
 		number_ids=self.db_cursor.execute(self.queries[query_request])	 #get number of user entries
 		self.db_cursor.fetchall()
 		return number_ids
 
 	def read_content(self, query_incoming, entry_id):
-		'returns a dictionary of values from the database'
+		'returns a dictionary of values from the database for the requested id and incoming query'
 
 		query_request = self.queries[query_incoming]
+
 		self.read_number_ids(query_incoming)
 
-		debug_mode("getting content " + query_incoming)
+		debug_mode("getting content " + query_incoming ,3 )
 
 		query_entry= ("SELECT id, title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")")
 		self.db_cursor.execute(query_entry)
 		self.content_tmp=self.db_cursor.fetchall()
 
 		try:
-		#	write to a dictionary being passed through
-		#	articles.append(RSSitem( [entry_id, self.content_tmp[0][0],self.content_tmp[0][1],self.label] ) )
 			labels= {
 			'id' :int(self.content_tmp[0][0]),
 			'title': unicode(self.content_tmp[0][1]),
@@ -78,8 +80,8 @@ class Mysql_Manager(object):
 
 		return
 
-debug_mode("Test")
-database=Mysql_Manager()
-database.start()
-print "number of id's in requested database: " + str( database.read_number_ids("starred") )
-print database.read_content("read", 3)
+#### usage reference:
+#database=Database_Manager()
+#database.start()
+#debug_mode( "number of id's in requested database: " + str( database.read_number_ids("starred") ),4 )
+#print database.read_content("read", 3)
