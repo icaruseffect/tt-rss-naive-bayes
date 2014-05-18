@@ -15,7 +15,9 @@ class Mysql_Manager(object):
 
 
 	def connect_database(self):
+		'connects to the mysql database'
 		debug_mode( "connecting to database" )
+
 		try:
 			self.ttrss_db = MySQLdb.connect(host=config.get('server', 'host'),
 								  user=config.get('server','user'),
@@ -24,53 +26,60 @@ class Mysql_Manager(object):
 			                      )
 			debug_mode( "connection established" )
 			self.db_cursor = self.ttrss_db.cursor()
+
 			self.queries = {
 			"starred" : ("SELECT ref_id FROM  "+self.var_db_prefix+"user_entries WHERE (marked = 1) OR (published = 1)"),
 			"read" : ("SELECT ref_id FROM " +self.var_db_prefix+"user_entries WHERE (marked = 0) AND (published = 0) AND (unread = 0) "),
-			"unread" : ("SELECT ref_id FROM "+self.var_db_prefix+"user_entries WHERE (score = '0')")
+			"unread" : ("SELECT ref_id FROM "+self.var_db_prefix+"user_entries WHERE (score = '0')"),
 			}
+
 			self.connected=True
 		except:
 			debug_mode("connection failed")
 			self.connected=False
+		return self.connected
 
-	def read_number_ids(self,query_type):
+	def read_number_ids(self,query_request):
 		#Database queries dictionary
-		number_ids=self.db_cursor.execute(self.queries[query_type])	 #get number of user entries
+		number_ids=self.db_cursor.execute(self.queries[query_request])	 #get number of user entries
 		self.db_cursor.fetchall()
 		return number_ids
 
-	def read_content(self, query_request, entry_id):
+	def read_content(self, query_incoming, entry_id):
 		'returns a dictionary of values from the database'
-		__entry_id__=entry_id
-		__label__=  query_request
-		__query_request__ = self.queries[__query_request__]
 
-		debug_mode("getting content " + __query_request__ )
+		query_request = self.queries[query_incoming]
+		self.read_number_ids(query_incoming)
 
-		self.query_entry= ("SELECT id, title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(__entry_id__) +")")
-		self.db_cursor.execute(__query_request__)
+		debug_mode("getting content " + query_incoming)
+
+		query_entry= ("SELECT id, title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")")
+		self.db_cursor.execute(query_entry)
 		self.content_tmp=self.db_cursor.fetchall()
+
 		try:
 		#	write to a dictionary being passed through
 		#	articles.append(RSSitem( [entry_id, self.content_tmp[0][0],self.content_tmp[0][1],self.label] ) )
-			labels= dict('id', 'title', 'content','label')
-			tmp_count=0
-			for item in labels:
-				if item==__label__: labels[item]=__label__
-				else:
-					item= self.content_tmp[0][tmp_count]
-					tmp_count+=1
-			return labels
+			labels= {
+			'id' :int(self.content_tmp[0][0]),
+			'title': unicode(self.content_tmp[0][1]),
+			'content': unicode(self.content_tmp[0][2]),
+			'label' : query_incoming
+			}
 
 		except:
-			return {'label': None}
+			labels = {'label': None}
+		return labels
 
-	def write_score(self):
+	def write_score(self,entry_id, score=0):
+		query_entry = ( "UPDATE "+ str(config.get('server','database') ) + "." + self.var_db_prefix + "user_entries SET score = " + str(score) +" WHERE ref_id =  " + str(entry_id) )
+
+
+
 		return
 
 debug_mode("Test")
 database=Mysql_Manager()
 database.start()
 print "number of id's in requested database: " + str( database.read_number_ids("starred") )
-print database.read_content("starred", 1)
+print database.read_content("read", 3)
