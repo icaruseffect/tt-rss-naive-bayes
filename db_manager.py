@@ -7,7 +7,7 @@ class Database_Manager(object):
 	'management class for the database. It processes requests from the article manager and  establishes a connection to the database, based data from the  configuration file.'
 
 	def __init__(self, thread_id=0):
-      	self.thread_id=thread_id
+		self.thread_id=thread_id
 		debug_mode( "mysql_manager started" ,1 )
 		self.var_db_prefix=config.get('server','database_prefix')
 
@@ -19,28 +19,28 @@ class Database_Manager(object):
 
 
 	def connect_database(self):
-		'connects to the mysql database'
+		'connects to the mysql database, based on the configuration file with detailed connection to a local/remote host or on a local server with data from my.conf'
+
 		debug_mode( "connecting to database" ,2 )
+		if config.get('server','use_my_cfg') == True:
 
-		try:
 			self.ttrss_db = MySQLdb.connect(host=config.get('server', 'host'),
-								  user=config.get('server','user'),
-			                      passwd=config.get('server','password'),
-			                      db=config.get('server','database')
-			                      )
-			debug_mode( "connection established" ,2)
-			self.db_cursor = self.ttrss_db.cursor()
+											db=config.get('server','database'),
+											read_default_file="~/.my.cnf"
+											)
 
-			self.queries = {
-			"starred" : ("SELECT ref_id FROM  "+self.var_db_prefix+"user_entries WHERE (marked = 1) OR (published = 1)"),
-			"read" : ("SELECT ref_id FROM " +self.var_db_prefix+"user_entries WHERE (marked = 0) AND (published = 0) AND (unread = 0) "),
-			"unread" : ("SELECT ref_id FROM "+self.var_db_prefix+"user_entries WHERE (score = '0')"),
-			}
+		else:
+			self.ttrss_db = MySQLdb.connect(host=config.get('server', 'host'),
+											user=config.get('server','user'),
+											passwd=config.get('server','password'),
+											db=config.get('server','database'),
+											port=int (config.get('server','port') )
+											)
+		debug_mode( "connection established" ,2)
+		self.db_cursor = self.ttrss_db.cursor()
 
-			self.connected=True
-		except:
-			debug_mode("connection failed")
-			self.connected=False
+
+		self.connected=True
 		return self.connected
 
 	def read_number_ids(self,query_request):
@@ -76,33 +76,37 @@ class Database_Manager(object):
 
 	def write_score(self,entry_id, score=0):
 		query_entry = ( "UPDATE "+ str(config.get('server','database') ) + "." + self.var_db_prefix + "user_entries SET score = " + str(score) +" WHERE ref_id =  " + str(entry_id) )
-	
-    	return
+		return
 
 #### rewrite of above functions ###
-    
+
     ##maybe it is possible to handle all of the three following fucntions, due the fact that translate_request handles them all
     ##so there is only the need to handle the read/write head (in future possible a sub_class, depending on benchmarks)
     ##quick and dirty tuturial: http://ianhowson.com/a-quick-guide-to-using-mysql-in-python.html
-    def write_to_table(self, selector_list, content_list):
-    	'this function handles common writing procedures to the database'
-        return
+	def write_to_table(self, selector_list, content_list):
+		'this function handles common writing procedures to the database'
+		return
 
 	def update_table(self, selector_list):
-    	'handles updating of articles and bag of words'
-        return
+		'handles updating of articles and bag of words'
+		return
 
-    def read_table(self, selector_list):
-    	'handles reading of tables and bag of words from the database'
-        return
-    
+	def read_table(self, selector_list):
+		'handles reading of tables and bag of words from the database'
+		return
+
 	def translate_request(self,request, article_id):
-    	'translates requests from article manager to mysql selectors based on request type (write,read,update) '
-        request_translations={} #update, read,write
-        return
+		'translates requests from article manager to mysql selectors based on request type (write,read,update) '
+		request_translations={} #update, read,write
+		self.queries = {
+			"starred" : ("SELECT ref_id FROM  "+self.var_db_prefix+"user_entries WHERE (marked = 1) OR (published = 1)"),
+			"read" : ("SELECT ref_id FROM " +self.var_db_prefix+"user_entries WHERE (marked = 0) AND (published = 0) AND (unread = 0) "),
+			"unread" : ("SELECT ref_id FROM "+self.var_db_prefix+"user_entries WHERE (score = '0')"),
+			}
+		return
 
 #### usage reference:
-#database=Database_Manager()
+database=Database_Manager()
 #database.start()
 #debug_mode( "number of id's in requested database: " + str( database.read_number_ids("starred") ),4 )
 #print database.read_content("read", 3)
