@@ -6,7 +6,8 @@ from helpers import *
 class Database_Manager(object):
 	'management class for the database. It processes requests from the article manager and  establishes a connection to the database, based data from the  configuration file.'
 
-	def start(self):
+	def __init__(self, thread_id=0):
+      	self.thread_id=thread_id
 		debug_mode( "mysql_manager started" ,1 )
 		self.var_db_prefix=config.get('server','database_prefix')
 
@@ -82,6 +83,7 @@ class Database_Manager(object):
     
     ##maybe it is possible to handle all of the three following fucntions, due the fact that translate_request handles them all
     ##so there is only the need to handle the read/write head (in future possible a sub_class, depending on benchmarks)
+    ##quick and dirty tuturial: http://ianhowson.com/a-quick-guide-to-using-mysql-in-python.html
     def write_to_table(self, selector_list, content_list):
     	'this function handles common writing procedures to the database'
         return
