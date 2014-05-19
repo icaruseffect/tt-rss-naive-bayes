@@ -14,7 +14,6 @@ class Database_Manager(object):
 
 		self.connected=False
 		self.connect_database()
-		self.disconnect_database()
 
 	def disconnect_database(self):
 		self.ttrss_db.close()
@@ -23,7 +22,7 @@ class Database_Manager(object):
 
 	def connect_database(self):
 		'connects to the mysql database, based on the configuration file with detailed connection to a local/remote host or on a local server with data from my.conf'
-		common_parameters= " use_unicode = 'True'  my_conv= {id : int, score : int, content: unicode, title : unicode} "
+		common_parameters= " use_unicode = 'True' , my_conv= {id : int, score : int, content: unicode, title : unicode},cursorclass=MySQLdb.cursors.DictCursor"
 
 		if config.get('server','use_my_cfg') == True:
 			debug_mode( "connecting to database with my.cnf" ,3 )
@@ -37,8 +36,11 @@ class Database_Manager(object):
 			self.ttrss_db = MySQLdb.connect(host=config.get('server', 'host'),
 											user=config.get('server','user'),
 											passwd=config.get('server','password'),
-											db=config.get('server','database')##,
+											db=config.get('server','database'),
 											#port=int (config.get('server','port') )
+											use_unicode = 'True' ,
+											#my_conv= {id : int, score : int, content: unicode, title : unicode},
+											cursorclass=MySQLdb.cursors.DictCursor
 											)
 		debug_mode( "connection established" ,3)
 		#self.db_cursor = self.ttrss_db.cursor()
@@ -96,14 +98,16 @@ class Database_Manager(object):
 
 	def translate_request(self,request, article_id):
 		'translates requests from article manager to mysql selectors based on request type (write,read,update) '
-		request_translations={} #update, read,write
-		self.queries = {
-			"score" :( "UPDATE " + self.var_db_prefix + "user_entries SET score = " + str(score) +" WHERE ref_id =  " + str(entry_id) ),
-			"starred" : ("SELECT ref_id FROM  "+self.var_db_prefix+"user_entries WHERE (marked = 1) OR (published = 1)"),
-			"read" : ("SELECT ref_id FROM " +self.var_db_prefix+"user_entries WHERE (marked = 0) AND (published = 0) AND (unread = 0) "),
-			"unread" : ("SELECT ref_id FROM "+self.var_db_prefix+"user_entries WHERE (score = '0')"),
-			"content" : ("SELECT id, title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")"),
-			}
+		##request_translations={} #update, read,write
+		#self.queries = {
+		#	"score" :( "UPDATE " + self.var_db_prefix + "user_entries SET score = " + str(score) +" WHERE ref_id =  " + str(entry_id) ),
+		#	"starred" : ("SELECT ref_id FROM  "+self.var_db_prefix+"user_entries WHERE (marked = 1) OR (published = 1)"),
+		#	"read" : ("SELECT ref_id FROM " +self.var_db_prefix+"user_entries WHERE (marked = 0) AND (published = 0) AND (unread = 0) "),
+		#	"unread" : ("SELECT ref_id FROM "+self.var_db_prefix+"user_entries WHERE (score = '0')"),
+		#	"content" : ("SELECT id, title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")"),
+		#	}
+
+		score=None	#write from content
 		translations= { 'read' : 'SELECT',
 						'write' : 'UPDATE',
 						'standard1' : ('ref_id FROM ' + self.var_db_prefix + 'user entries WHERE' ),
@@ -116,6 +120,5 @@ class Database_Manager(object):
 
 #### usage reference:
 database=Database_Manager()
-#database.start()
 #debug_mode( "number of id's in requested database: " + str( database.read_number_ids("starred") ),4 )
 #print database.read_content("read", 3)
