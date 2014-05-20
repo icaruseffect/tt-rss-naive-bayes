@@ -96,7 +96,7 @@ class Database_Manager(object):
 		#3) if read command -> cursor.fetchall()
 		return fetchoneDict(c)
 
-	def translate_request(self,request, article_id=None, content=None):
+	def translate_request(self,request, article_id=0, content=''):
 		'translates requests from article manager to mysql selectors based on request type (write,read,update) '
 		##request_translations={} #update, read,write
 		#self.queries = {
@@ -110,24 +110,29 @@ class Database_Manager(object):
 		if type(content) == int:
 			content=score	#write from content to score variable
 		else:
-			score = None
+			score = 0
 
-		self.translations= { 'read' : 'SELECT',
-						'write' : 'UPDATE',
-						'standard1' : ('ref_id FROM ' + self.var_db_prefix + 'user entries WHERE' ),
+		self.translations= {
+						'get' : ' SELECT ',
+						'push' : ' UPDATE ',
+						'standard' : ('ref_id FROM ' + self.var_db_prefix + 'user entries WHERE' ),
 						'starred' : ('(marked = 1) OR (published = 1)' ),
 						'read' : ('(marked = 0) AND (published = 0) AND (unread = 0)' ),
 						'unread' : (' score = 0' ),
-						'score' : ('SET score = ' + int(content) )
+						'score' : ('SET score = ' + str(content) )
 					}
 
 		command=''
-		for transl in request:
-			command.join( self.translations[transl] )
+		for transl in request.split():
+			command += self.translations[transl]
+			debug_mode(command)
+		print command
 
 		return #write_to_table(command)
 
 #### usage reference:
 database=Database_Manager()
+
+#database.translate_request("push standard read")  ## returns the string for the database head
 #debug_mode( "number of id's in requested database: " + str( database.read_number_ids("starred") ),4 )
 #print database.read_content("read", 3)
