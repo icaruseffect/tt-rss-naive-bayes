@@ -96,7 +96,7 @@ class Database_Manager(object):
 		#3) if read command -> cursor.fetchall()
 		return fetchoneDict(c)
 
-	def translate_request(self,request, article_id):
+	def translate_request(self,request, article_id=None, content=None):
 		'translates requests from article manager to mysql selectors based on request type (write,read,update) '
 		##request_translations={} #update, read,write
 		#self.queries = {
@@ -107,8 +107,12 @@ class Database_Manager(object):
 		#	"content" : ("SELECT id, title, content FROM " +self.var_db_prefix+"entries WHERE (id="+ str(entry_id) +")"),
 		#	}
 
-		score=None	#write from content
-		translations= { 'read' : 'SELECT',
+		if type(content) == int:
+			content=score	#write from content to score variable
+		else:
+			score = None
+
+		self.translations= { 'read' : 'SELECT',
 						'write' : 'UPDATE',
 						'standard1' : ('ref_id FROM ' + self.var_db_prefix + 'user entries WHERE' ),
 						'starred' : ('(marked = 1) OR (published = 1)' ),
@@ -116,7 +120,12 @@ class Database_Manager(object):
 						'unread' : (' score = 0' ),
 						'score' : ('SET score = ' + int(content) )
 					}
-		return
+
+		command=''
+		for transl in request:
+			command.join( self.translations[transl] )
+
+		return #write_to_table(command)
 
 #### usage reference:
 database=Database_Manager()
