@@ -28,13 +28,12 @@ backend
 -------
 Processing the data is handled by 3 parts of the backend:
 
-1.) database_manager
+1.) Database_manager
 
--handles the connection to the mysql-server wich holds the tt-rss database.
+	-handles the connection to the mysql-server wich holds the tt-rss database.
+	-It creates an layer between the database and the article_manager to reduce the amount of code.
 
--It creates an layer between the database and the article_manager to reduce the amount of code.
-
-2.) article_manager
+2.) Article_manager
 
 	-handles articles. In the first version handles following tasks:
 	-fetches all articles
@@ -44,7 +43,7 @@ Processing the data is handled by 3 parts of the backend:
 	-hands results back to the database manager 
 	-drops old articles in a user defined time-span, to keep the filter adapted to current interests. 
 
-3.) filter_manager
+3.) Filter_manager
 
 	-handles the filters being applied to determine a score (later also individual labels):
 	-handling of training-sets
